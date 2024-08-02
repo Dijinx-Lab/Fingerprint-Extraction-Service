@@ -37,6 +37,3 @@ class CdkDockerLambdaStack(Stack):
         process = api.root.add_resource("process")
         extract = process.add_resource("extract")
         extract.add_method("POST")
-
-        remove_bg = process.add_resource("remove-bg")
-        remove_bg.add_method("POST")
