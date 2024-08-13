@@ -69,14 +69,14 @@ async def extract_print(img):
     # Additional enhancement using CLAHE for better contrast
     lab = await loop.run_in_executor(None, cv2.cvtColor, img_enhanced, cv2.COLOR_BGR2Lab)
     l, a, b = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(4, 4))#changed from 3.0 to 1.0 and (8,8) to (4,4)
     cl = await loop.run_in_executor(None, clahe.apply, l)
     limg = cv2.merge((cl, a, b))
     img_enhanced = await loop.run_in_executor(None, cv2.cvtColor, limg, cv2.COLOR_Lab2BGR)
 
     # Convert to HSV for segmentation
     hsv = await loop.run_in_executor(None, cv2.cvtColor, img_enhanced, cv2.COLOR_BGR2HSV)
-    lower = np.array([0, 20, 70], dtype="uint8")
+    lower = np.array([0, 20, 0], dtype="uint8") #changed from 70 to 0
     upper = np.array([20, 255, 255], dtype="uint8")
     mask = await loop.run_in_executor(None, cv2.inRange, hsv, lower, upper)
 
@@ -96,14 +96,14 @@ async def extract_print(img):
         cv2.drawContours(mask, [largest_contour], 0, 255, -1)
 
         # Perform post-processing
-        mask = await loop.run_in_executor(None, cv2.GaussianBlur, mask, (5, 5), 0)
+        mask = await loop.run_in_executor(None, cv2.GaussianBlur, mask, (25, 25), 0) #changed from (5,5) to (25,25)
 
         # Segment the hand or finger region
         hand = cv2.bitwise_and(img_enhanced, img_enhanced, mask=mask)
 
         # Convert to grayscale and apply adaptive thresholding
         hand_gray = await loop.run_in_executor(None, cv2.cvtColor, hand, cv2.COLOR_BGR2GRAY)
-        hand_thresh = await loop.run_in_executor(None, cv2.adaptiveThreshold, hand_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        hand_thresh = await loop.run_in_executor(None, cv2.adaptiveThreshold, hand_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 0) #changed from 11,2 to 11,0
 
         # Apply edge detection
         edges = await loop.run_in_executor(None, cv2.Canny, hand_gray, 100, 200)
@@ -122,6 +122,7 @@ async def extract_print(img):
         return cropped_hand
     else:
         raise HTTPException(status_code=400, detail="No contours found in your image, please retake and upload again")
+
 
 def resize_image(image, max_height=800, max_width=800):
     height, width = image.shape[:2]
