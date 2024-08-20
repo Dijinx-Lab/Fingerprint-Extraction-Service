@@ -126,9 +126,13 @@ async def extract_print(img):
 
 def resize_image(image, max_height=800, max_width=800):
     height, width = image.shape[:2]
+    # Calculate scaling factor if resizing is needed
     if height > max_height or width > max_width:
         scaling_factor = min(max_height / height, max_width / width)
         new_size = (int(width * scaling_factor), int(height * scaling_factor))
         resized_image = cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
-        return resized_image
-    return image
+    else:
+        resized_image = image
+    # Flip the image along the x-axis
+    flipped_image = cv2.flip(resized_image, 1)
+    return flipped_image
